@@ -29,7 +29,7 @@ class Driver(VISA_Driver):
                     self.wait(0.03)
                     self.reportProgress(x/100)
         
-        elif: quant.name == 'Frequency':
+        elif quant.name == 'Frequency':
             self.writeAndLog('FREQ %s, %s'%(self.getValue('Channel'), value))
         else:
             VISA_Driver.performSetValue(self, quant, value, sweepRate, options)
