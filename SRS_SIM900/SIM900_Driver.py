@@ -1,6 +1,6 @@
 from VISA_Driver import VISA_Driver
 
-class SIM9XX_Driver(VISA_Driver):
+class SIM900_Driver(VISA_Driver):
     """ This class re-implements the VISA driver"""
 
     def performOpen(self, options={}):
@@ -54,21 +54,17 @@ class SIM9XX_Driver(VISA_Driver):
 
         #Step through the IDs, extract the instrument name, and compare it to the selected mdoel
         #If found, now we know which channel that module lives at
-        found_port = False
+        self.ports_dict = {}
         for ix, idn in enumerate(idns):
             channel = ix+1
             if idn != '':
                 module_code = idn.split(',')[1]
-                if module_code == self.dInstrCfg['options']['model_id'][0]:
-                    self.sim900_port = channel
-                    found_port = True
-
-        assert found_port == True, "Failed to locate module in mainframe! Check connections."
+                self.ports_dict[module_code] = channel
+            else:
+                module_code = 'Empty'
+            
+            self.setValue('Slot %d' % channel, module_code)
                    
-
-
-
-
     def performClose(self, bError=False, options={}):
         """Perform the close instrument connection operation"""
         # calling the generic VISA class to close communication
@@ -80,31 +76,35 @@ class SIM9XX_Driver(VISA_Driver):
         """Perform the Set Value instrument operation. This function should
         return the actual value set by the instrument"""
 
-        self.writeAndLog('FLSH %d' % self.sim900_port)
-        self.writeAndLog('SNDT %d, "%s"' % (self.sim900_port, quant.set_cmd), bCheckError=False)
+        port = self.ports_dict[options['module_code']]
+
+        self.writeAndLog('FLSH %d' % port)
+        self.writeAndLog('SNDT %d, "%s"' % (port, quant.set_cmd), bCheckError=False)
 
         return value
 
     def performGetValue(self, quant, options={}):
         """Perform the Get Value instrument operation"""
 
-        self.writeAndLog('FLSH %d' % self.sim900_port)
-        self.writeAndLog('SNDT %d, "%s"' % (self.sim900_port, quant.get_cmd), bCheckError=False)
+        port = self.ports_dict[options['module_code']]
+
+        self.writeAndLog('FLSH %d' % port)
+        self.writeAndLog('SNDT %d, "%s"' % (port, quant.get_cmd), bCheckError=False)
         
         
         self.wait(0.1)
 
         #Again, the idea is to keep checking the port until it has finished publishing data.
         #There is probably a way better way to do this....
-        nbytes_waiting = int(self.askAndLog('NINP? %d' % self.sim900_port, bCheckError=False))
+        nbytes_waiting = int(self.askAndLog('NINP? %d' % port, bCheckError=False))
         nbytes_waiting_old = 0
 
         while (nbytes_waiting_old != nbytes_waiting) or (nbytes_waiting == 0):
             nbytes_waiting_old = nbytes_waiting
-            nbytes_waiting = int(self.askAndLog('NINP? %d' % self.sim900_port, bCheckError=False))
+            nbytes_waiting = int(self.askAndLog('NINP? %d' % port, bCheckError=False))
             self.wait(0.1)
         
-        self.writeAndLog('RAWN? %d, %d' % (self.sim900_port, nbytes_waiting), bCheckError=False)
+        self.writeAndLog('RAWN? %d, %d' % (port, nbytes_waiting), bCheckError=False)
         value = float(self.read(nbytes_waiting).decode().strip('\r\n'))
         
         return value
