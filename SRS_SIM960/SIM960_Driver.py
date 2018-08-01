@@ -10,4 +10,4 @@ from common_lib.SIM9XX_Driver import SIM9XX_Driver
 class Driver(SIM9XX_Driver):
     """ This class re-implements the SIM9XX driver"""
 
-    pass
+    pass        
