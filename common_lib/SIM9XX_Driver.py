@@ -41,7 +41,7 @@ class SIM9XX_Driver(InstrumentDriver.InstrumentWorker):
         options.update(dict(module_code=self.getAddress(),
                             module_cmd=quant.set_cmd.replace('<*>', value)))
 
-        value = self.sim900.setValue('Passthrough', value, options=options)
+        value = self.sim900.setValue('Passthrough', value, sweepRate, options=options)
 
         return value
 
