@@ -1,6 +1,6 @@
 from VISA_Driver import VISA_Driver
 
-class SIM900_Driver(VISA_Driver):
+class Driver(VISA_Driver):
     """ This class re-implements the VISA driver"""
 
     def performOpen(self, options={}):
@@ -11,6 +11,7 @@ class SIM900_Driver(VISA_Driver):
 
         #Hacky way to make sure the input buffer is flushed out
         try:
+            self.reportProgress(1/8)
             _ = self.read(1024)
         except:
             pass
@@ -51,6 +52,7 @@ class SIM900_Driver(VISA_Driver):
                 idns.append(self.read(nbytes_waiting).decode().strip('\r\n'))
             else:
                 idns.append('')
+            self.reportProgress((ix+1)/8)
 
         #Step through the IDs, extract the instrument name, and compare it to the selected mdoel
         #If found, now we know which channel that module lives at
@@ -64,6 +66,8 @@ class SIM900_Driver(VISA_Driver):
                 module_code = 'Empty'
             
             self.setValue('Slot %d' % channel, module_code)
+
+        # self.instrCfg.addQuantity(dict{name='passthrough', visibility=False})
                    
     def performClose(self, bError=False, options={}):
         """Perform the close instrument connection operation"""
@@ -76,35 +80,58 @@ class SIM900_Driver(VISA_Driver):
         """Perform the Set Value instrument operation. This function should
         return the actual value set by the instrument"""
 
-        port = self.ports_dict[options['module_code']]
+        if 'Slot' in quant.name:
+            pass
+             
+        
+        elif quant.name == 'Passthrough':
+            module_code = options.pop('module_code', None)
 
-        self.writeAndLog('FLSH %d' % port)
-        self.writeAndLog('SNDT %d, "%s"' % (port, quant.set_cmd), bCheckError=False)
+            if module_code is None:
+                value='None'
+            else:
+                port = self.ports_dict[module_code]
+                module_cmd = options.pop('module_cmd', None)
+
+                self.writeAndLog('FLSH %d' % port)
+                self.writeAndLog('SNDT %d, "%s"' % (port, module_cmd), bCheckError=False)
+        else:
+           value =  VISA_Driver.performSetValue(self, quant, value, sweepRate, options)
 
         return value
 
     def performGetValue(self, quant, options={}):
         """Perform the Get Value instrument operation"""
 
-        port = self.ports_dict[options['module_code']]
+        if 'Slot' in quant.name:
+            value = quant.getValue()
+        elif quant.name == 'Passthrough':
 
-        self.writeAndLog('FLSH %d' % port)
-        self.writeAndLog('SNDT %d, "%s"' % (port, quant.get_cmd), bCheckError=False)
-        
-        
-        self.wait(0.1)
+            module_code = options.pop('module_code', None)
+            if module_code is None:
+                value='None'
+            else:
+                port = self.ports_dict[module_code]
+                module_cmd = options.pop('module_cmd', None)
 
-        #Again, the idea is to keep checking the port until it has finished publishing data.
-        #There is probably a way better way to do this....
-        nbytes_waiting = int(self.askAndLog('NINP? %d' % port, bCheckError=False))
-        nbytes_waiting_old = 0
+                self.writeAndLog('FLSH %d' % port)
+                self.writeAndLog('SNDT %d, "%s"' % (port, module_cmd), bCheckError=False)
+                
+                
+                self.wait(0.1)
 
-        while (nbytes_waiting_old != nbytes_waiting) or (nbytes_waiting == 0):
-            nbytes_waiting_old = nbytes_waiting
-            nbytes_waiting = int(self.askAndLog('NINP? %d' % port, bCheckError=False))
-            self.wait(0.1)
-        
-        self.writeAndLog('RAWN? %d, %d' % (port, nbytes_waiting), bCheckError=False)
-        value = float(self.read(nbytes_waiting).decode().strip('\r\n'))
-        
+                #Again, the idea is to keep checking the port until it has finished publishing data.
+                #There is probably a way better way to do this....
+                nbytes_waiting = int(self.askAndLog('NINP? %d' % port, bCheckError=False))
+                nbytes_waiting_old = 0
+
+                while (nbytes_waiting_old != nbytes_waiting) or (nbytes_waiting == 0):
+                    nbytes_waiting_old = nbytes_waiting
+                    nbytes_waiting = int(self.askAndLog('NINP? %d' % port, bCheckError=False))
+                    self.wait(0.1)
+                
+                self.writeAndLog('RAWN? %d, %d' % (port, nbytes_waiting), bCheckError=False)
+                value = (self.read(nbytes_waiting).decode().strip('\r\n'))
+        else:
+            value = VISA_Driver.performGetValue(self, quant, options=options)
         return value
