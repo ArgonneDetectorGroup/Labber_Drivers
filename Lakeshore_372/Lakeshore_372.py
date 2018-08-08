@@ -1,5 +1,32 @@
 from VISA_Driver import VISA_Driver
 
+#Some necessary globals
+#The order of these lists is super important!!! Don't change it!
+
+SPECIAL_QUANTS = {
+    'INSET':['Status', 'Dwell Time', 'Pause Time', 'Calibration Curve', 'Temperature Coefficient'],
+    'INTYPE':['Excitation Mode', 'Excitation Value', 'Autorange', 'Range', 'Excitation Status', 'Units'],
+    'FILTER':['Filter Status', 'Filter Settle Time', 'Filter Window']
+}
+
+def parse_qname(fullname):
+    '''Discover and return the name and channel of the desired quantity'''
+    foundName = False
+    for _cmd, _quants in SPECIAL_QUANTS.items():
+        for name in _quants:
+            if fullname.startswith(name):
+               qname = name
+               qchannel = fullname.split(name+' ')[-1]
+               foundName = True
+               break
+            else:
+                qname = fullname
+                qchannel = None
+        if foundName == True:
+            break
+
+    return qname, qchannel
+
 class Driver(VISA_Driver):
     """ This class re-implements the VISA driver"""
 
@@ -19,18 +46,8 @@ class Driver(VISA_Driver):
         """Perform the Set Value instrument operation. This function should
         return the actual value set by the instrument"""
 
-        #The order of these two lists is super important!!! Don't change it!
-        inset_quants = ['Status', 'Dwell Time', 'Pause Time', 'Calibration Curve', 'Temperature Coefficient']
-        intype_quants = ['Excitation Mode', 'Excitation Value', 'Autorange', 'Range', 'Excitation Status', 'Units']
-
         #Try and parse the quantity name to get the quant type and channel number
-        for name in inset_quants+intype_quants:
-            if quant.name.startswith(name):
-               qname = name
-               qchannel = quant.name.split(name+' ')[-1]
-               break
-            else:
-                qname = quant.name
+        qname, qchannel = parse_qname(quant.name)
 
         if qname == 'Active Channel':
             self.writeAndLog('SCAN %s, 0'%value, bCheckError=False)
@@ -40,20 +57,21 @@ class Driver(VISA_Driver):
                     self.wait(0.03)
                     self.reportProgress(x/100)
         
-        elif qname in inset_quants+intype_quants:
-            if qname in inset_quants:
-                cmd = 'INSET'
-                qix = inset_quants.index(qname)
-            elif qname in intype_quants:
-                cmd = 'INTYPE'
-                qix = intype_quants.index(qname)
+        elif qchannel is not None:
+
+            #Grab the right command and index for the quantity
+            for _cmd, _quants in SPECIAL_QUANTS.items():
+                if qname in _quants:
+                    cmd = _cmd
+                    qix = _quants.index(qname)
+                    break
 
             vals_list = self.askAndLog('%s? %s'%(cmd, qchannel), bCheckError=False).split(',')
 
             #Datatype 2 is COMBO
             if quant.datatype == 2:
                 new_val = quant.getCmdStringFromValue(value)
-            #Datatype 0 is DOUBLE, but for these two commands it's really an INT
+            #Datatype 0 is DOUBLE, but for these commands it's really an INT
             elif quant.datatype == 0:
                 new_val = '%d'%value
             #None of the inset/intype commands should be any other datatype, so raise error
@@ -62,7 +80,19 @@ class Driver(VISA_Driver):
 
             vals_list[qix] = new_val
 
+            #If the user tries to set the resistance range of any channel
+            #or the range/value of the control channel, turn off Autorange
+            if (qname == 'Range') or (quant.name == 'Excitation Value A'):
+                vals_list[2] = '0'
+
             self.writeAndLog('%s %s,%s'%(cmd, qchannel, ','.join(vals_list)))
+
+            #Give the box a little time to do its thing
+            self.wait(0.1)
+
+            #Double check that anything actually changed. Not all options are always available
+            #depending on setting. Like, if Autorange is on, then you can't set excitations.
+            value = self.performGetValue(quant, options={})
 
         else:
             value = VISA_Driver.performSetValue(self, quant, value, sweepRate, options)
@@ -73,19 +103,9 @@ class Driver(VISA_Driver):
         """Perform the Get Value instrument operation"""
 
         active_channel_quants = ['Temperature', 'Quadrature', 'Resistance', 'Power']
-        
-        #The order of these two lists is super important!!! Don't change it!
-        inset_quants = ['Status', 'Dwell Time', 'Pause Time', 'Calibration Curve', 'Temperature Coefficient']
-        intype_quants = ['Excitation Mode', 'Excitation Value', 'Autorange', 'Range', 'Excitation Status', 'Units']
 
         #Try and parse the quantity name to get the quant type and channel number
-        for name in inset_quants+intype_quants:
-            if quant.name.startswith(name):
-               qname = name
-               qchannel = quant.name.split(name+' ')[-1]
-               break
-            else:
-                qname = quant.name
+        qname, qchannel = parse_qname(quant.name)
 
         if qname in active_channel_quants:
 
@@ -97,20 +117,26 @@ class Driver(VISA_Driver):
         elif qname == 'Active Channel':
             value = self.askAndLog('SCAN?', bCheckError=False).split(',')[0]
         
-        elif qname in inset_quants+intype_quants:
-            if qname in inset_quants:
-                cmd = 'INSET'
-                qix = inset_quants.index(qname)
-            elif qname in intype_quants:
-                cmd = 'INTYPE'
-                qix = intype_quants.index(qname)
+        elif qchannel is not None:
 
+            for _cmd, _quants in SPECIAL_QUANTS.items():
+                if qname in _quants:
+                    cmd = _cmd
+                    break
 
             vals_list = self.askAndLog('%s? %s'%(cmd, qchannel), bCheckError=False).split(',')
 
-            #There is really no reason not to set all of the other ones here, too, but it isn't
-            #strictly necessary, as logger or anything else will just ask for them again anyhow
-            value = vals_list[qix]
+            #There is really no reason not to set all of the other ones here, too.
+            for val, q in zip(vals_list, SPECIAL_QUANTS[cmd]):
+                _qname = '%s %s'%(q, qchannel)
+
+                #Have to do a check here because not all the quants exist for channel A
+                if _qname in self.dQuantities.keys():
+                    self.setValue(_qname, val)
+
+                #Make sure the function still resturns the right thing
+                if _qname == quant.name:
+                    value = val
 
         else:
             value = VISA_Driver.performGetValue(self, quant, options)

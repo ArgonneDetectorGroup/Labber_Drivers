@@ -193,6 +193,17 @@ cmd_def_{{loop.index}}: {{loop.index}}
 {% endfor %}
 group: Control Input
 
+[Autorange A]
+datatype: COMBO
+permission: BOTH
+combo_def_1: Off
+combo_def_2: Current
+combo_def_3: ROX 102B
+cmd_def_1: 0
+cmd_def_2: 1
+cmd_def_3: 2
+group: Control Input
+
 [Excitation Status A]
 datatype: COMBO
 permission: BOTH
@@ -209,6 +220,31 @@ combo_def_1: Kelvin
 combo_def_2: Ohms
 cmd_def_1: 1
 cmd_def_2: 2
+group: Control Input
+
+[Filter Status A]
+datatype: COMBO
+permission: BOTH
+combo_def_1: Off
+combo_def_2: On
+cmd_def_1: 0
+cmd_def_2: 0
+group: Control Input
+
+[Filter Settle Time A]
+datatype: DOUBLE
+unit: seconds
+permission: BOTH
+low_lim: 0
+high_lim: 200
+group: Control Input
+
+[Filter Window A]
+datatype: DOUBLE
+unit: percent
+permission: BOTH
+low_lim: 1
+high_lim: 80
 group: Control Input
 
 [Active Channel]
@@ -386,6 +422,31 @@ permission: BOTH
 combo_def_{{loop.index}}: {{range}}
 cmd_def_{{loop.index}}: {{loop.index}}
 {% endfor %}
+group: Channel {{ch}}
+
+[Filter Status {{ch}}]
+datatype: COMBO
+permission: BOTH
+combo_def_1: Off
+combo_def_2: On
+cmd_def_1: 0
+cmd_def_2: 0
+group: Channel {{ch}}
+
+[Filter Settle Time {{ch}}]
+datatype: DOUBLE
+unit: seconds
+permission: BOTH
+low_lim: 0
+high_lim: 200
+group: Channel {{ch}}
+
+[Filter Window {{ch}}]
+datatype: DOUBLE
+unit: percent
+permission: BOTH
+low_lim: 1
+high_lim: 80
 group: Channel {{ch}}
 
 {% endfor %}
