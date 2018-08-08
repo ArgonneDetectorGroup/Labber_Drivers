@@ -108,7 +108,8 @@ class Driver(VISA_Driver):
         qname, qchannel = parse_qname(quant.name)
 
         if qname in active_channel_quants:
-
+        #These are really just a convenience for remote operation
+        #In any real measurements one would use the appropriate channel X quants
             current_channel = self.readValueFromOther('Active Channel')
 
             cmd = quant.get_cmd.replace('<*>', current_channel)
