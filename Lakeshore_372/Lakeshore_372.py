@@ -39,57 +39,30 @@ class Driver(VISA_Driver):
             for x in range(100):
                     self.wait(0.03)
                     self.reportProgress(x/100)
-        elif qname in inset_quants:
-            vals_list = []
-            for qix, q in enumerate(inset_quants):
-
-                #Might as well update the rest of them even though they weren't
-                #explicitly asked for...
-                q_datatype =  self.getQuantity('%s %s'%(q, qchannel)).datatype
-
-                if q == qname:
-                    if q_datatype == 2:
-                        val = quant.getCmdStringFromValue(value)
-                    elif q_datatype == 0:
-                        val = '%d'%value
-                else:
-                    if q_datatype == 2:
-                        #COMBOBOX index
-                        
-                        val = self.getQuantity('%s %s'%(q, qchannel)).getCmdStringFromValue()
-                    elif q_datatype == 0:
-                        #DOUBLE --> String
-                        val = '%d'%self.getValue('%s %s'%(q, qchannel))
-                
-                vals_list.append(val)
-
-            self.writeAndLog('INSET %s,%s'%(qchannel, ','.join(vals_list)))
         
-        elif qname in intype_quants:
-            vals_list = []
-            for qix, q in enumerate(intype_quants):
+        elif qname in inset_quants+intype_quants:
+            if qname in inset_quants:
+                cmd = 'INSET'
+                qix = inset_quants.index(qname)
+            elif qname in intype_quants:
+                cmd = 'INTYPE'
+                qix = intype_quants.index(qname)
 
-                #Might as well update the rest of them even though they weren't
-                #explicitly asked for...
-                q_datatype =  self.getQuantity('%s %s'%(q, qchannel)).datatype
+            vals_list = self.askAndLog('%s? %s'%(cmd, qchannel), bCheckError=False).split(',')
 
-                if q == qname:
-                    if q_datatype == 2:
-                        val = quant.getCmdStringFromValue(value)
-                    elif q_datatype == 0:
-                        val = '%d'%value
-                else:
-                    if q_datatype == 2:
-                        #COMBOBOX index
-                        
-                        val = self.getQuantity('%s %s'%(q, qchannel)).getCmdStringFromValue()
-                    elif q_datatype == 0:
-                        #DOUBLE --> String
-                        val = '%d'%self.getValue('%s %s'%(q, qchannel))
-                
-                vals_list.append(val)
+            #Datatype 2 is COMBO
+            if quant.datatype == 2:
+                new_val = quant.getCmdStringFromValue(value)
+            #Datatype 0 is DOUBLE, but for these two commands it's really an INT
+            elif quant.datatype == 0:
+                new_val = '%d'%value
+            #None of the inset/intype commands should be any other datatype, so raise error
+            else:
+                raise ValueError("Unknown data type")
 
-            self.writeAndLog('INTYPE %s,%s'%(qchannel, ','.join(vals_list)))
+            vals_list[qix] = new_val
+
+            self.writeAndLog('%s %s,%s'%(cmd, qchannel, ','.join(vals_list)))
 
         else:
             value = VISA_Driver.performSetValue(self, quant, value, sweepRate, options)
@@ -120,38 +93,25 @@ class Driver(VISA_Driver):
 
             cmd = quant.get_cmd.replace('<*>', current_channel)
             value = self.askAndLog(cmd, bCheckError=False)
+        
         elif qname == 'Active Channel':
             value = self.askAndLog('SCAN?', bCheckError=False).split(',')[0]
-        elif qname in intype_quants:
-            #Get the string of values back from the Lakeshore
-            query = self.askAndLog('INTYPE? %s'%qchannel, bCheckError=False).split(',')
+        
+        elif qname in inset_quants+intype_quants:
+            if qname in inset_quants:
+                cmd = 'INSET'
+                qix = inset_quants.index(qname)
+            elif qname in intype_quants:
+                cmd = 'INTYPE'
+                qix = intype_quants.index(qname)
 
-            #Plug them all into the right place
-            for qix, quant in enumerate(intype_quants):
 
-                #Might as well update the rest of them even though they weren't
-                #explicitly asked for...
-                self.setValue('%s %s'%(quant, qchannel), query[qix])
+            vals_list = self.askAndLog('%s? %s'%(cmd, qchannel), bCheckError=False).split(',')
 
-                #Set the "asked for" value here so it gets returned properly
-                if quant == qname:
-                    value = query[qix]
+            #There is really no reason not to set all of the other ones here, too, but it isn't
+            #strictly necessary, as logger or anything else will just ask for them again anyhow
+            value = vals_list[qix]
 
-        elif qname in inset_quants:
-            #Get the string of values back from the Lakeshore
-            query = self.askAndLog('INSET? %s'%qchannel, bCheckError=False).split(',')
-            # assert False, query
-
-            #Plug them all into the right place
-            for qix, quant in enumerate(inset_quants):
-
-                #Might as well update the rest of them even though they weren't
-                #explicitly asked for...
-                self.setValue('%s %s'%(quant, qchannel), query[qix])
-
-                #Set the "asked for" value here so it gets returned properly
-                if quant == qname:
-                    value = query[qix]
         else:
             value = VISA_Driver.performGetValue(self, quant, options)
         return value

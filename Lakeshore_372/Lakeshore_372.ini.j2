@@ -147,6 +147,23 @@ set_cmd: FREQ A,<*>
 get_cmd: FREQ? A
 group: Control Input
 
+[Status A]
+datatype: COMBO
+permission: BOTH
+combo_def_1: Disabled
+combo_def_2: Enabled
+cmd_def_1: 0
+cmd_def_2: 1
+group: Control Input
+
+[Pause Time A]
+datatype: DOUBLE
+unit: seconds
+permission: BOTH
+low_lim: 3
+high_lim: 200
+group: Control Input
+
 [Calibration Curve A]
 datatype: COMBO
 permission: BOTH
@@ -156,6 +173,42 @@ cmd_def_{{loop.index}}: {{crv}}
 {% endfor %}
 set_cmd: INCRV A,<*>
 get_cmd: INCRV? A
+group: Control Input
+
+[Temperature Coefficient A]
+datatype: COMBO
+permission: BOTH
+combo_def_1: Negative
+combo_def_2: Positive
+cmd_def_1: 1
+cmd_def_2: 2
+group: Control Input
+
+[Excitation Value A]
+datatype: COMBO
+permission: BOTH
+{% for range in ranges_A %}
+combo_def_{{loop.index}}: {{range}}
+cmd_def_{{loop.index}}: {{loop.index}}
+{% endfor %}
+group: Control Input
+
+[Excitation Status A]
+datatype: COMBO
+permission: BOTH
+combo_def_1: On
+combo_def_2: Off
+cmd_def_1: 0
+cmd_def_2: 1
+group: Control Input
+
+[Units A]
+datatype: COMBO
+permission: BOTH
+combo_def_1: Kelvin
+combo_def_2: Ohms
+cmd_def_1: 1
+cmd_def_2: 2
 group: Control Input
 
 [Active Channel]
