@@ -1,0 +1,58 @@
+#Update this to match scanner type
+scanner_type: 3726
+
+#Settings for different scanners from manual
+scanner_dict: {
+  'None' : {
+          channels: [0],
+          voltage_range: ['2.00 uV', '6.32 uV', '20.0 uV', '63.2 uV', '200 uV', '623 uV', '2.00 mV', '6.32 mV', '20.0 mV', '63.2 mV', '200 mV', '632 mV', 'n/a', 'n/a', 'n/a', 'n/a', 'n/a', 'n/a', 'n/a', 'n/a', 'n/a', 'n/a'],
+          current_range: ['1.00 pA', '3.16 pA', '10.0 pA', '31.6 pA', '100 pA', '316 pA', '1.00 nA', '3.16 nA', '10.0 nA', '31.6 nA', '100 nA', '316 nA', '1.00 uA', '3.16 uA', '10.0 uA', '31.6 uA', '100 uA', '316 uA', '1.00 mA', '3.16 mA', '10.0 mA', '31.6 mA']
+         },
+  3708 : {
+          channels: [1, 2, 3, 4, 5, 6, 7, 8],
+          voltage_range: ['2.00 uV', '6.32 uV', '20.0 uV', '63.2 uV', '200 uV', '623 uV', '2.00 mV', '6.32 mV', 'n/a', 'n/a', 'n/a', 'n/a', 'n/a', 'n/a', 'n/a', 'n/a', 'n/a', 'n/a', 'n/a', 'n/a', 'n/a', 'n/a'],
+          current_range: ['1.00 pA', '3.16 pA', '10.0 pA', '31.6 pA', '100 pA', '316 pA', '1.00 nA', '3.16 nA', '10.0 nA', '31.6 nA', '100 nA', '316 nA', '1.00 uA', '3.16 uA', '10.0 uA', '31.6 uA', '100 uA', '316 uA', '1.00 mA', '3.16 mA', '10.0 mA', '31.6 mA']
+         },
+  3726 : {
+          channels: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
+          voltage_range: ['2.00 uV', '6.32 uV', '20.0 uV', '63.2 uV', '200 uV', '623 uV', '2.00 mV', '6.32 mV', '20.0 mV', '63.2 mV', '200 mV', '632 mV', 'n/a', 'n/a', 'n/a', 'n/a', 'n/a', 'n/a', 'n/a', 'n/a', 'n/a', 'n/a'],
+          current_range: ['1.00 pA', '3.16 pA', '10.0 pA', '31.6 pA', '100 pA', '316 pA', '1.00 nA', '3.16 nA', '10.0 nA', '31.6 nA', '100 nA', '316 nA', '1.00 uA', '3.16 uA', '10.0 uA', '31.6 uA', '100 uA', '316 uA', '1.00 mA', '3.16 mA', '10.0 mA', '31.6 mA']
+         }
+}
+
+#Some lists defined in the manual
+frequencies: ['9.8 Hz',
+              '13.7 Hz',
+              '16.2 Hz',
+              '11.6 Hz',
+              '18.2 Hz']
+
+ranges: ['2.0 mOhm',
+         '6.32 mOhm',
+         '20.0 mOhm',
+         '63.2 mOhm',
+         '200 mOhm',
+         '632 mOhm',
+         '2.0 Ohm',
+         '6.32 Ohm',
+         '20.0 Ohm',
+         '63.2 Ohm',
+         '200 Ohm',
+         '632 Ohm',
+         '2.00 kOhm',
+         '6.32 kOhm',
+         '20.0 kOhm',
+         '63.2 kOhm',
+         '200 kOhm',
+         '632 kOhm',
+         '2.00 MOhm',
+         '6.32 MOhm',
+         '20.0 MOhm',
+         '63.2 MOhm']
+
+ranges_A: ['316 pA, 632 kOhm',
+           '1 nA, 200 kOhm',
+           '3.16 nA, 63.2 kOhm',
+           '10 nA, 20 kOhm',
+           '31.6 nA, 6.32 kOhm',
+           '100 nA, 2 kOhm']
