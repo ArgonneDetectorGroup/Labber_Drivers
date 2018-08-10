@@ -3,8 +3,9 @@ LABBER_SERVER = 'localhost'
 VOLTMETER = 'Stanford Research SIM 970 Voltmeter'
 VOLTMETER_QUANT = 'Ch4 Voltage'
 
-import sys
-sys.path.append(LABBER_PATH)
+# LABBER_PATH should be added to PYTHON_PATH already. If not, uncomment the next two lines
+# import sys
+# sys.path.append(LABBER_PATH)
 
 import Labber as lab
 import InstrumentDriver
