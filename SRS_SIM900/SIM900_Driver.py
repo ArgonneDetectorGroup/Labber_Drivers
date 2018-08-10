@@ -1,7 +1,49 @@
 from VISA_Driver import VISA_Driver
+import time
 
 class Driver(VISA_Driver):
     """ This class re-implements the VISA driver"""
+
+    def sim900_module_ask(self, port, module_cmd, timeout = 0.5, bCheckError=False):
+        """This function tries to get a value from a SIM 900 module in a smart way
+        without directly connecting in passthrough mode. This is important because
+        any intermediate calls to the SIM 900 (like setting a value) should accumulate
+        in the SIM 900 buffer and not the module buffer. It probably doesn't actually
+        matter here, because the underlying Driver event queue shouldn't allow concurrent
+        writes and reads, but in principle it's good to be smart."""
+
+        self.writeAndLog('FLSH %d' % port)
+        self.writeAndLog('SNDT %d, "%s"' % (port, module_cmd), bCheckError=bCheckError)
+        
+        wait_on_term = True
+        response = ''
+        start = time.time()
+        while wait_on_term:
+            nbytes_waiting = 0
+
+            #Poll the mainframe until it reports data is waiting or it times out
+            while nbytes_waiting == 0:
+                nbytes_waiting = int(self.askAndLog('NINP? %d' % port, bCheckError=bCheckError))
+                if time.time() - start > timeout:
+                    response = 'None'
+                    wait_on_term = False
+                    break
+
+            #Grab the data and check for a term char. If not there yet, wait for more data or timeout
+            if wait_on_term:
+                self.writeAndLog('RAWN? %d, %d' % (port, nbytes_waiting), bCheckError=bCheckError)
+                response += self.read(nbytes_waiting).decode()
+
+                if response[-2:] == '\r\n':
+                    wait_on_term = False
+
+                if time.time()-start > timeout:
+                    start = time.time()
+                    response = 'Timed Out'
+                    wait_on_term = False
+
+        value = response.strip('\r\n')
+        return value
 
     def performOpen(self, options={}):
         """Perform the operation of opening the instrument connection"""
@@ -21,53 +63,20 @@ class Driver(VISA_Driver):
         self.writeAndLog('FLOQ')
 
         #Step through each channel and query ID
-        for ix in range(8):
-            channel = ix+1
-            self.writeAndLog('FLSH %d' % channel)
-            self.writeAndLog('SNDT %d, "*IDN?"' % channel, bCheckError=False)
-        
-        #Really need to wait here to make sure the above commands have time to process
-        self.wait(0.1)
-        
-        #Vectors for holding returned ID queries
-        idns = []
-        for ix in range(8):
-
-            channel = ix+1
-
-            #The idea here is that the SIM modules are way slower than the computer, so we
-            #keep checking the number of bytes waiting at the port until it stabalizes,
-            #then we read exactly the correct number of bytes from the port.
-
-            #If we get an ID, append it to the list, otherwise append an empty string
-            nbytes_waiting = int(self.askAndLog('NINP? %d' % channel, bCheckError=False))
-            if nbytes_waiting > 0:
-                nbytes_waiting_old = 0
-                while nbytes_waiting_old != nbytes_waiting:
-                    nbytes_waiting_old = nbytes_waiting
-                    nbytes_waiting = int(self.askAndLog('NINP? %d' % channel, bCheckError=False))
-                    self.wait(0.01)
-                
-                self.writeAndLog('RAWN? %d, %d' % (channel, nbytes_waiting), bCheckError=False)
-                idns.append(self.read(nbytes_waiting).decode().strip('\r\n'))
-            else:
-                idns.append('')
-            self.reportProgress((ix+1)/8)
-
-        #Step through the IDs, extract the instrument name, and compare it to the selected mdoel
-        #If found, now we know which channel that module lives at
+        #Build up a dict of IDN/Channel pairs
         self.ports_dict = {}
-        for ix, idn in enumerate(idns):
+        for ix in range(8):
             channel = ix+1
-            if idn != '':
+            idn = self.sim900_module_ask(channel, '*IDN?', timeout = 0.5, bCheckError=False)
+
+            if idn not in  ['None', 'Timed Out']:
                 module_code = idn.split(',')[1]
                 self.ports_dict[module_code] = channel
             else:
-                module_code = 'Empty'
+                module_code = idn
             
             self.setValue('Slot %d' % channel, module_code)
-
-        # self.instrCfg.addQuantity(dict{name='passthrough', visibility=False})
+            self.reportProgress(channel/8)
                    
     def performClose(self, bError=False, options={}):
         """Perform the close instrument connection operation"""
@@ -114,24 +123,11 @@ class Driver(VISA_Driver):
                 port = self.ports_dict[module_code]
                 module_cmd = options.pop('module_cmd', None)
 
-                self.writeAndLog('FLSH %d' % port)
-                self.writeAndLog('SNDT %d, "%s"' % (port, module_cmd), bCheckError=False)
-                
-                
-                self.wait(0.1)
+                value = self.sim900_module_ask(port, module_cmd)
 
-                #Again, the idea is to keep checking the port until it has finished publishing data.
-                #There is probably a way better way to do this....
-                nbytes_waiting = int(self.askAndLog('NINP? %d' % port, bCheckError=False))
-                nbytes_waiting_old = 0
 
-                while (nbytes_waiting_old != nbytes_waiting) or (nbytes_waiting == 0):
-                    nbytes_waiting_old = nbytes_waiting
-                    nbytes_waiting = int(self.askAndLog('NINP? %d' % port, bCheckError=False))
-                    self.wait(0.1)
+
                 
-                self.writeAndLog('RAWN? %d, %d' % (port, nbytes_waiting), bCheckError=False)
-                value = (self.read(nbytes_waiting).decode().strip('\r\n'))
         else:
             value = VISA_Driver.performGetValue(self, quant, options=options)
         return value
