@@ -62,10 +62,12 @@ class Driver(InstrumentDriver.InstrumentWorker):
 
             #Memory Management!
             writeChan.ClearTask()
- 
+
             #Now set up a task to monitor the Opening/Closing lines (port0 lines 0,1)
             #We want to block the program until it is finished
-            monVal = np.zeros(2, dtype=np.uint8)
+
+            #Default to ones so that if it's already closed it will pick that up right away
+            monVal = np.ones(2, dtype=np.uint8)
             sampsPer = mx.int32()
             numBytesPer = mx.int32()
             monitorToggle = mx.Task()
@@ -78,10 +80,11 @@ class Driver(InstrumentDriver.InstrumentWorker):
                 if all(monVal):
                     isToggling = False
                 self.wait(0.2)
-                self.reportProgress((time.time()-startTime)/duration)
-            
-            self.reportProgress(1)
-            
+
+                #Report progress hates values greater than 1?
+                if (time.time()-startTime)/duration < 1.0:
+                    self.reportProgress((time.time()-startTime)/duration)
+
             monitorToggle.ClearTask()
         
         elif quant.name == 'Read all':
