@@ -3,7 +3,8 @@ Lakeshore 372 Driver
 This driver supports multiple scanner options.
 To select the scanner, change the "scanner_type" value in
 `Lakeshore_372.ini.yml` to the appropriate scanner model.
-Then, open a terminal and rebuild the driver .ini file with `yasha`::
+Then, open a terminal and rebuild the driver .ini file with `yasha`.
+Note: on Windows, use the anaconda terminal so the env vars get set correctly.::
 
   yasha -e yasha_extensions.py Lakeshore_372.ini.j2
 

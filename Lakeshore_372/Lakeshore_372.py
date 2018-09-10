@@ -50,7 +50,9 @@ class Driver(VISA_Driver):
         qname, qchannel = parse_qname(quant.name)
 
         if qname == 'Active Channel':
-            self.writeAndLog('SCAN %s, 0'%value, bCheckError=False)
+            ch_num = quant.getCmdStringFromValue(value)
+
+            self.writeAndLog('SCAN %s, 0'%ch_num, bCheckError=False)
 
             #Wait three seconds for instrument to settle
             for x in range(100):
