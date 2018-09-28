@@ -194,33 +194,35 @@ class Driver(InstrumentDriver.InstrumentWorker):
 
     def performSetValue(self, quant, value, sweepRate=0.0, options={}):
         if quant.name == 'Run Cycle':
-            #Start fresh from zero every time
-            assert self.source.getValue(V_QUANT) == 0.0, "Must start mag cycle at zero current"
+            #Do nothing if a mag cycle is already running
+            if (self.timer is None) or (self.timer.is_alive() == False):
+                #Start fresh from zero every time
+                assert self.source.getValue(V_QUANT) == 0.0, "Must start mag cycle at zero current"
 
-            #Check to make sure the relay switch is in the desired position
-            relay_position = self.relay.getValue('Relay Position')
-            resistor = self.getValue('Resistor')
-            if resistor == 'Mag Cycle (0.99)':
-                assert (relay_position == 'Mag Cycle'), "Set relay properly before running"
-            else:
-                assert( relay_position == 'Regulate'), "Set relay properly before running"
-                message = 'Verify manual switches are set to: %s! Enter 1 to Abort: ' % resistor
-                abort = self.getValueFromUserDialog(value=0, text=message, title='Warning!')
+                #Check to make sure the relay switch is in the desired position
+                relay_position = self.relay.getValue('Relay Position')
+                resistor = self.getValue('Resistor')
+                if resistor == 'Mag Cycle (0.99)':
+                    assert (relay_position == 'Mag Cycle'), "Set relay properly before running"
+                else:
+                    assert( relay_position == 'Regulate'), "Set relay properly before running"
+                    message = 'Verify manual switches are set to: %s! Enter 1 to Abort: ' % resistor
+                    abort = self.getValueFromUserDialog(value=0, text=message, title='Warning!')
 
-                if abort:
-                    return value
+                    if abort:
+                        return value
 
-            #Set this now for the duration of the cycle
-            self.resistance = float(self.getCmdStringFromValue('Resistor'))
+                #Set this now for the duration of the cycle
+                self.resistance = float(self.getCmdStringFromValue('Resistor'))
 
-            self.setValue('Status', 'Setting heat switch')
-            self.heatSwitch.setValue('Heat Switch', self.getValue('Heat Switch Start Position'))
+                self.setValue('Status', 'Setting heat switch')
+                self.heatSwitch.setValue('Heat Switch', self.getValue('Heat Switch Start Position'))
 
-            start_delay_secs = self.getValue('Start Delay Time')*60*60
-            self.timer = threading.Timer(start_delay_secs, self.rampMag, 
-                                            kwargs = dict(precallback=self.startMag, postcallback=self.startSoak))
-            self.timer.start()
-            self.setValue('Status', 'Mag Cycle scheduled for %f seconds from now'%start_delay_secs)
+                start_delay_secs = self.getValue('Start Delay Time')*60*60
+                self.timer = threading.Timer(start_delay_secs, self.rampMag, 
+                                                kwargs = dict(precallback=self.startMag, postcallback=self.startSoak))
+                self.timer.start()
+                self.setValue('Status', 'Mag Cycle scheduled for %f seconds from now'%start_delay_secs)
         
         elif quant.name == 'Abort Cycle':
             self.setValue('Status', 'Aborting Cycle')
