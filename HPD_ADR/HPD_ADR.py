@@ -194,10 +194,32 @@ class Driver(InstrumentDriver.InstrumentWorker):
 
     def performSetValue(self, quant, value, sweepRate=0.0, options={}):
         if quant.name == 'Run Cycle':
-            #Do nothing if a mag cycle is already running
-            if (self.timer is None) or (self.timer.is_alive() == False):
-                #Start fresh from zero every time
-                assert self.source.getValue(V_QUANT) == 0.0, "Must start mag cycle at zero current"
+
+            #Check for a few necessary starting conditions
+            run_conditions = ((self.timer is None or self.timer.is_alive() == False), #Cycle not already running
+                              self.getValue('Enable Run') == True, #Extra safety switch has been depressed
+                              self.source.getValue(V_QUANT) == 0.0, #Start fresh from zero every time
+                             )
+
+            run_error_messages = ("Mag cycle is already running!",
+                                  "Must check Enable Run checkbox!",
+                                  "Must start mag cycle at zero current!")
+
+            #Build up a list of errors preventing cycle from starting
+            active_errors = []
+            for condition, message in zip(run_conditions, run_error_messages):
+                if condition == False:
+                    active_errors.append(message)
+
+            #Nofify user of why cycle is not starting
+            if len(active_errors) > 0:
+                self.setValue('Status', ', '.join(active_errors))
+
+
+            #Check that all pre-conditions are satisfied
+            if all(run_conditions):
+                #Reset the verify switch to force user to re-check on new Run
+                self.setValue('Enable Run', False)
 
                 #Check to make sure the relay switch is in the desired position
                 relay_position = self.relay.getValue('Relay Position')
@@ -223,6 +245,7 @@ class Driver(InstrumentDriver.InstrumentWorker):
                                                 kwargs = dict(precallback=self.startMag, postcallback=self.startSoak))
                 self.timer.start()
                 self.setValue('Status', 'Mag Cycle scheduled for %f seconds from now'%start_delay_secs)
+                self.setValue('Enable Run', False)
         
         elif quant.name == 'Abort Cycle':
             self.setValue('Status', 'Aborting Cycle')
