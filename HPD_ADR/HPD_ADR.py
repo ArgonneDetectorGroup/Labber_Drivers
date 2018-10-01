@@ -197,12 +197,10 @@ class Driver(InstrumentDriver.InstrumentWorker):
 
             #Check for a few necessary starting conditions
             run_conditions = ((self.timer is None or self.timer.is_alive() == False), #Cycle not already running
-                              self.getValue('Enable Run') == True, #Extra safety switch has been depressed
                               self.source.getValue(V_QUANT) == 0.0, #Start fresh from zero every time
                              )
 
             run_error_messages = ("Mag cycle is already running!",
-                                  "Must check Enable Run checkbox!",
                                   "Must start mag cycle at zero current!")
 
             #Build up a list of errors preventing cycle from starting
@@ -218,9 +216,6 @@ class Driver(InstrumentDriver.InstrumentWorker):
 
             #Check that all pre-conditions are satisfied
             if all(run_conditions):
-                #Reset the verify switch to force user to re-check on new Run
-                self.setValue('Enable Run', False)
-
                 #Check to make sure the relay switch is in the desired position
                 relay_position = self.relay.getValue('Relay Position')
                 resistor = self.getValue('Resistor')
@@ -245,7 +240,6 @@ class Driver(InstrumentDriver.InstrumentWorker):
                                                 kwargs = dict(precallback=self.startMag, postcallback=self.startSoak))
                 self.timer.start()
                 self.setValue('Status', 'Mag Cycle scheduled for %f seconds from now'%start_delay_secs)
-                self.setValue('Enable Run', False)
         
         elif quant.name == 'Abort Cycle':
             self.setValue('Status', 'Aborting Cycle')
