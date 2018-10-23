@@ -16,7 +16,7 @@ def parse_qname(fullname):
         for name in _quants:
             if fullname.startswith(name):
                qname = name
-               qchannel = fullname.split(name+' ')[-1].split('_')[-1]
+               qchannel = fullname.split(name+' ')[-1]
                foundName = True
                break
             else:
@@ -131,8 +131,8 @@ class Driver(VISA_Driver):
 
             #There is really no reason not to set all of the other ones here, too.
             for val, q in zip(vals_list, SPECIAL_QUANTS[cmd]):
-                _qname = '%s Ch_%s'%(q, qchannel)
-
+                _qname = '%s %s'%(q, qchannel)
+                
                 #Have to do a check here because not all the quants exist for channel A
                 if _qname in self.dQuantities.keys():
                     self.setValue(_qname, val)

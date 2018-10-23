@@ -251,7 +251,7 @@ group: Control Input
 datatype: COMBO
 permission: BOTH
 {% for ch in scanner['channels'] %}
-combo_def_{{ch}}: Ch_{{ch}}
+combo_def_{{ch}}: {{ch}}
 cmd_def_{{ch}}: {{ch}}
 {% endfor %}
 group: Measurement Input
@@ -297,35 +297,35 @@ get_cmd: FREQ? 0
 group: Measurement Input
 
 {% for ch in scanner['channels'] %}
-[Temperature Ch_{{ch}}]
+[Temperature {{ch}}]
 unit: K
 datatype: DOUBLE
 permission: READ
 get_cmd: KRDG? {{ch}}
 group: Channel {{ch}}
 
-[Resistance Ch_{{ch}}]
+[Resistance {{ch}}]
 unit: Ohm
 datatype: DOUBLE
 permission: READ
 get_cmd: SRDG? {{ch}}
 group: Channel {{ch}}
 
-[Power Ch_{{ch}}]
+[Power {{ch}}]
 unit: W
 datatype: DOUBLE
 permission: READ
 get_cmd: RDGPWR? {{ch}}
 group: Channel {{ch}}
 
-[Quadrature Ch_{{ch}}]
+[Quadrature {{ch}}]
 unit: Ohms
 datatype: DOUBLE
 permission: READ
 get_cmd: QRDG? {{ch}}
 group: Channel {{ch}}
 
-[Status Ch_{{ch}}]
+[Status {{ch}}]
 datatype: COMBO
 permission: BOTH
 combo_def_1: Disabled
@@ -334,7 +334,7 @@ cmd_def_1: 0
 cmd_def_2: 1
 group: Channel {{ch}}
 
-[Dwell Time Ch_{{ch}}]
+[Dwell Time {{ch}}]
 datatype: DOUBLE
 unit: seconds
 permission: BOTH
@@ -342,7 +342,7 @@ low_lim: 1
 high_lim: 200
 group: Channel {{ch}}
 
-[Pause Time Ch_{{ch}}]
+[Pause Time {{ch}}]
 datatype: DOUBLE
 unit: seconds
 permission: BOTH
@@ -350,7 +350,7 @@ low_lim: 3
 high_lim: 200
 group: Channel {{ch}}
 
-[Calibration Curve Ch_{{ch}}]
+[Calibration Curve {{ch}}]
 datatype: COMBO
 permission: BOTH
 {% for crv in range(60) %}
@@ -361,7 +361,7 @@ set_cmd: INCRV {{ch}},<*>
 get_cmd: INCRV? {{ch}}
 group: Channel {{ch}}
 
-[Temperature Coefficient Ch_{{ch}}]
+[Temperature Coefficient {{ch}}]
 datatype: COMBO
 permission: BOTH
 combo_def_1: Negative
@@ -370,7 +370,7 @@ cmd_def_1: 1
 cmd_def_2: 2
 group: Channel {{ch}}
 
-[Excitation Mode Ch_{{ch}}]
+[Excitation Mode {{ch}}]
 datatype: COMBO
 permission: BOTH
 combo_def_1: Voltage
@@ -379,7 +379,7 @@ cmd_def_1: 0
 cmd_def_2: 1
 group: Channel {{ch}}
 
-[Excitation Value Ch_{{ch}}]
+[Excitation Value {{ch}}]
 datatype: COMBO
 permission: BOTH
 {% for volt, amp in scanner['voltage_range'] | zip(scanner['current_range']) %}
@@ -388,7 +388,7 @@ cmd_def_{{loop.index}}: {{loop.index}}
 {% endfor %}
 group: Channel {{ch}}
 
-[Excitation Status Ch_{{ch}}]
+[Excitation Status {{ch}}]
 datatype: COMBO
 permission: BOTH
 combo_def_1: On
@@ -397,7 +397,7 @@ cmd_def_1: 0
 cmd_def_2: 1
 group: Channel {{ch}}
 
-[Units Ch_{{ch}}]
+[Units {{ch}}]
 datatype: COMBO
 permission: BOTH
 combo_def_1: Kelvin
@@ -406,7 +406,7 @@ cmd_def_1: 1
 cmd_def_2: 2
 group: Channel {{ch}}
 
-[Autorange Ch_{{ch}}]
+[Autorange {{ch}}]
 datatype: COMBO
 permission: BOTH
 combo_def_1: Off
@@ -415,7 +415,7 @@ cmd_def_1: 0
 cmd_def_2: 1
 group: Channel {{ch}}
 
-[Range Ch_{{ch}}]
+[Range {{ch}}]
 datatype: COMBO
 permission: BOTH
 {% for range in ranges %}
@@ -424,7 +424,7 @@ cmd_def_{{loop.index}}: {{loop.index}}
 {% endfor %}
 group: Channel {{ch}}
 
-[Filter Status Ch_{{ch}}]
+[Filter Status {{ch}}]
 datatype: COMBO
 permission: BOTH
 combo_def_1: Off
@@ -433,7 +433,7 @@ cmd_def_1: 0
 cmd_def_2: 0
 group: Channel {{ch}}
 
-[Filter Settle Time Ch_{{ch}}]
+[Filter Settle Time {{ch}}]
 datatype: DOUBLE
 unit: seconds
 permission: BOTH
@@ -441,7 +441,7 @@ low_lim: 0
 high_lim: 200
 group: Channel {{ch}}
 
-[Filter Window Ch_{{ch}}]
+[Filter Window {{ch}}]
 datatype: DOUBLE
 unit: percent
 permission: BOTH
