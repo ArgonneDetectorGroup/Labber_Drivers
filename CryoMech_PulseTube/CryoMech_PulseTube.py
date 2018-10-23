@@ -4,14 +4,12 @@ import InstrumentDriver
 import pt415_interface as pti
 
 
-port = 'COM1'
-baudrate = 115200
-
-
 class Driver(InstrumentDriver.InstrumentWorker):
     
     def performOpen(self, options={}):
-        
+        port = self.getAddress()
+        baudrate = 115200
+
         self.connection = serial.Serial(port, baudrate, timeout = 2)
         assert self.connection.isOpen(), "Serial port connection error"
         self.connection.flushInput()
@@ -24,7 +22,8 @@ class Driver(InstrumentDriver.InstrumentWorker):
         with self.connection as conn:
             key = quant.get_cmd
             request = pti.pt415_dict[key].getReadRequest()
-            conn.open()
+            # Commented out for pyserial 3.4, which explicitly opens. Should test with 2.7
+            # conn.open()
             conn.flushInput()
             conn.write(request)
             response = pti.read_until(conn, '\r', 2)
@@ -39,7 +38,8 @@ class Driver(InstrumentDriver.InstrumentWorker):
         with self.connection as conn:
             key = quant.set_cmd
             request = pti.pt415_dict[key].getWriteRequest()
-            conn.open()
+            # Commented out for pyserial 3.4, which explicitly opens. Should test with 2.7
+            # conn.open()
             conn.flushInput()
             conn.write(request)
 
